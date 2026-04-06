@@ -169,8 +169,9 @@ footer{border-top:1px solid var(--line);padding:32px 80px;display:flex;justify-c
 .f-copy{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:12px;color:var(--sumi-faint);letter-spacing:0.06em}
 
 /* SCROLL REVEAL */
-.rv{opacity:0;transform:translateY(18px);transition:opacity .75s ease,transform .75s ease}
+.rv{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease}
 .rv.in{opacity:1;transform:translateY(0)}
+@media(max-width:900px){.rv{opacity:1;transform:none}}
 
 /* RESPONSIVE */
 @media(max-width:900px){
@@ -537,8 +538,13 @@ try {
 // Scroll reveal
 const obs = new IntersectionObserver(es => {
 es.forEach(e => { if (e.isIntersecting) e.target.classList.add(‘in’); });
-}, { threshold: 0.08 });
+}, { threshold: 0, rootMargin: ‘0px 0px -40px 0px’ });
 document.querySelectorAll(’.rv’).forEach(el => obs.observe(el));
+
+// Fallback: reveal all after 2s in case observer fails
+setTimeout(() => {
+document.querySelectorAll(’.rv’).forEach(el => el.classList.add(‘in’));
+}, 2000);
 </script>
 
 </body>

@@ -438,7 +438,7 @@ footer{border-top:1px solid var(--line);padding:32px 80px;display:flex;justify-c
           <li><span class="pcheck dot">·</span>專屬客服支援</li>
           <li><span class="pcheck dot">·</span>學習成效報告</li>
         </ul>
-        <a class="plan-btn" href="mailto:hello@kiminomono.com">洽談合作</a>
+        <a class="plan-btn" href="/cdn-cgi/l/email-protection#b7dfd2dbdbd8f7dcdedaded9d8dad8d9d899d4d8da">洽談合作</a>
       </div>
     </div>
   </div>
@@ -466,27 +466,79 @@ footer{border-top:1px solid var(--line);padding:32px 80px;display:flex;justify-c
     <li><a href="#">隱私政策</a></li>
     <li><a href="#">服務條款</a></li>
     <li><a href="#">教師專區</a></li>
-    <li><a href="mailto:hello@kiminomono.com">hello@kiminomono.com</a></li>
+    <li><a href="/cdn-cgi/l/email-protection#c9a1aca5a5a689a2a0a4a0a7a6a4a6a7a6e7aaa6a4"><span class="__cf_email__" data-cfemail="d5bdb0b9b9ba95bebcb8bcbbbab8babbbafbb6bab8">[email&#160;protected]</span></a></li>
   </ul>
   <div class="f-copy">© 2026 キミの物語 · kiminomono.com</div>
 </footer>
 
-<script>
-  function doVote(btn, c) {
-    document.querySelectorAll('.vopt').forEach(b => b.classList.remove('on'));
-    btn.classList.add('on');
-    document.getElementById('vd').classList.add('show');
-  }
-  function joinWL(e) {
-    e.preventDefault();
-    document.getElementById('wl-ok').classList.add('show');
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+
+const SUPABASE_URL = “https://nbxdhhzzkpwwboyrhtks.supabase.co”;
+const SUPABASE_KEY = “eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ieGRoaHp6a3B3d2JveXJodGtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MTMwNTQsImV4cCI6MjA5MDk4OTA1NH0.2Z7wn7pyZDvmOLCtsQBVg-P3I3D98ahY0IqYWdvCuJQ”;
+
+function doVote(btn, c) {
+document.querySelectorAll(’.vopt’).forEach(b => b.classList.remove(‘on’));
+btn.classList.add(‘on’);
+document.getElementById(‘vd’).classList.add(‘show’);
+}
+
+async function joinWL(e) {
+e.preventDefault();
+const email = document.getElementById(‘wl-email’).value.trim();
+const btn   = e.target.querySelector(’.wl-btn’);
+const okEl  = document.getElementById(‘wl-ok’);
+
+```
+if (!email) return;
+
+// 按鈕顯示讀取中
+btn.textContent = '送出中…';
+btn.disabled = true;
+
+try {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/waitlist', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify({ email: email })
+  });
+
+  if (res.ok || res.status === 201) {
+    // 成功
+    okEl.textContent = '✓ 已收到！We\'ll be in touch soon.';
+    okEl.style.color = 'var(--matcha)';
+    okEl.classList.add('show');
     document.getElementById('wl-email').value = '';
-    // TODO: POST to Supabase
+  } else if (res.status === 409) {
+    // 重複 email
+    okEl.textContent = '✓ 你已經在名單上了！You\'re already on the list.';
+    okEl.style.color = 'var(--sumi-light)';
+    okEl.classList.add('show');
+  } else {
+    throw new Error('Status ' + res.status);
   }
-  const obs = new IntersectionObserver(es => {
-    es.forEach(e => { if(e.isIntersecting) e.target.classList.add('in'); });
-  }, {threshold: 0.08});
-  document.querySelectorAll('.rv').forEach(el => obs.observe(el));
+} catch (err) {
+  okEl.textContent = '⚠ 發生錯誤，請稍後再試。Something went wrong.';
+  okEl.style.color = 'var(--beni)';
+  okEl.classList.add('show');
+  console.error('Waitlist error:', err);
+} finally {
+  btn.textContent = '加入 / Join';
+  btn.disabled = false;
+}
+```
+
+}
+
+// Scroll reveal
+const obs = new IntersectionObserver(es => {
+es.forEach(e => { if (e.isIntersecting) e.target.classList.add(‘in’); });
+}, { threshold: 0.08 });
+document.querySelectorAll(’.rv’).forEach(el => obs.observe(el));
 </script>
 
 </body>

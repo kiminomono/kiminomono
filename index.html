@@ -453,12 +453,11 @@ footer{border-top:1px solid var(--line);padding:32px 80px;display:flex;justify-c
     <div class="sec-label rv" style="justify-content:center"><div class="sec-label-line"></div><div class="sec-label-text">Early Access · 搶先體驗</div><div class="sec-label-line"></div></div>
     <div class="sec-jp rv" style="text-align:center;margin-top:16px;font-size:clamp(26px,3vw,38px)">加入等待名單</div>
     <div class="sec-en rv" style="text-align:center;margin-top:6px;font-size:14px">Join the waitlist for priority access and early-bird pricing</div>
-    <form class="wl-form rv" onsubmit="joinWL(event)">
-      <input class="wl-input" type="email" id="wl-email" placeholder="your@email.com" required />
+    <form class="wl-form rv" action="https://formspree.io/f/xykblnkz" method="POST">
+      <input class="wl-input" type="email" name="email" placeholder="your@email.com" required />
       <button class="wl-btn" type="submit">加入 / Join</button>
     </form>
     <div class="wl-note rv">不會收到垃圾郵件。只在開放體驗時通知你。<br/>No spam. Notified only when access opens.</div>
-    <div class="wl-ok" id="wl-ok"></div>
   </div>
 </div>
 
@@ -473,83 +472,19 @@ footer{border-top:1px solid var(--line);padding:32px 80px;display:flex;justify-c
   <div class="f-copy">© 2026 キミの物語 · kiminomono.com</div>
 </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-
-const SUPABASE_URL = “https://nbxdhhzzkpwwboyrhtks.supabase.co”;
-const SUPABASE_KEY = “eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ieGRoaHp6a3B3d2JveXJodGtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MTMwNTQsImV4cCI6MjA5MDk4OTA1NH0.2Z7wn7pyZDvmOLCtsQBVg-P3I3D98ahY0IqYWdvCuJQ”;
-
-function doVote(btn, c) {
-document.querySelectorAll(’.vopt’).forEach(b => b.classList.remove(‘on’));
-btn.classList.add(‘on’);
-document.getElementById(‘vd’).classList.add(‘show’);
-}
-
-async function joinWL(e) {
-e.preventDefault();
-const email = document.getElementById(‘wl-email’).value.trim();
-const btn   = e.target.querySelector(’.wl-btn’);
-const okEl  = document.getElementById(‘wl-ok’);
-
-```
-if (!email) return;
-
-btn.textContent = '送出中…';
-btn.disabled = true;
-okEl.classList.remove('show');
-
-try {
-  const res = await fetch(SUPABASE_URL + '/rest/v1/waitlist', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
-      'Prefer': 'return=minimal',
-      'Content-Profile': 'public'
-    },
-    body: JSON.stringify({ email: email })
-  });
-
-  const status = res.status;
-  let body = '';
-  try { body = await res.text(); } catch(_) {}
-
-  if (status === 200 || status === 201) {
-    okEl.textContent = '✓ 已收到！We\'ll be in touch soon.';
-    okEl.style.color = '#4a6741';
-    okEl.classList.add('show');
-    document.getElementById('wl-email').value = '';
-  } else if (status === 409 || (body && body.includes('duplicate'))) {
-    okEl.textContent = '✓ 你已經在名單上了！You\'re already on the list.';
-    okEl.style.color = '#7a7268';
-    okEl.classList.add('show');
-  } else {
-    okEl.textContent = '⚠ 錯誤 ' + status + '：' + body.slice(0,80);
-    okEl.style.color = '#9b3a2e';
-    okEl.classList.add('show');
+<script>
+  function doVote(btn, c) {
+    document.querySelectorAll('.vopt').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    document.getElementById('vd').classList.add('show');
   }
-} catch (err) {
-  okEl.textContent = '⚠ 網路錯誤，請稍後再試。' + err.message;
-  okEl.style.color = '#9b3a2e';
-  okEl.classList.add('show');
-} finally {
-  btn.textContent = '加入 / Join';
-  btn.disabled = false;
-}
-```
-
-}
-
-// Scroll reveal
-const obs = new IntersectionObserver(es => {
-es.forEach(e => { if (e.isIntersecting) e.target.classList.add(‘in’); });
-}, { threshold: 0, rootMargin: ‘0px 0px -40px 0px’ });
-document.querySelectorAll(’.rv’).forEach(el => obs.observe(el));
-
-// Fallback: reveal all after 2s in case observer fails
-setTimeout(() => {
-document.querySelectorAll(’.rv’).forEach(el => el.classList.add(‘in’));
-}, 2000);
+  const obs = new IntersectionObserver(es => {
+    es.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+  }, { threshold: 0, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.rv').forEach(el => obs.observe(el));
+  setTimeout(() => {
+    document.querySelectorAll('.rv').forEach(el => el.classList.add('in'));
+  }, 2000);
 </script>
 
 </body>

@@ -718,7 +718,8 @@ async function startUpload() {
     selectedFiles.forEach((file, idx) => {
       // Rename file before upload
       const newName = getNewName(idx);
-      const mimeType = (file.type && file.type.startsWith("image/")) ? file.type : "image/jpeg";
+      // 強制設定 mime type 為 image/jpeg
+      const mimeType = file.type || "image/jpeg";
       const renamed = new File([file], newName, { type: mimeType });
       formData.append("photos", renamed);
     });
@@ -761,13 +762,16 @@ async function startUpload() {
       refreshStatus();
       log("↻ 已重新整理課程狀態", "info");
     }, 30000);
-
+   
   } catch (err) {
     setProgress(0, "");
-    showResult("error", `❌ 上傳失敗：${err.message}`);
-    log(`❌ ${err.message}`, "err");
+    const msg = err.message || err.toString() || "未知錯誤";
+    showResult("error", `❌ 上傳失敗：${msg}<br/><small>${err.name || ""}: ${err.stack || ""}</small>`);
+    log(`❌ ${msg}`, "err");
+    console.error("Upload error:", err);
     document.getElementById("uploadBtn").disabled = false;
   }
+
 }
 
 // ── Status ────────────────────────────────────────────────

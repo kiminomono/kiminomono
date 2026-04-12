@@ -717,10 +717,10 @@ async function startUpload() {
 
     selectedFiles.forEach((file, idx) => {
       // Rename file before upload
-      const newName = getNewName(idx);
+      //const newName = getNewName(idx);
       // 強制設定 mime type 為 image/jpeg
-      const mimeType = file.type || "image/jpeg";
-      const renamed = new File([file], newName, { type: mimeType });
+      //const mimeType = file.type || "image/jpeg";
+      //const renamed = new File([file], newName, { type: mimeType });
       formData.append("photos", renamed);
     });
 

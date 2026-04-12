@@ -723,7 +723,10 @@ async function startUpload() {
 
     const resp = await fetch(`${UPLOAD_SERVER_URL}/api/upload`, {
       method: "POST",
-      headers: { "X-Admin-Token": ADMIN_SECRET },
+      headers: {
+        "X-Admin-Token": ADMIN_SECRET,
+        "bypass-tunnel-reminder": "true",
+      },
       body: formData,
     });
 
@@ -784,7 +787,10 @@ async function refreshStatus() {
   try {
     if (UPLOAD_SERVER_URL) {
       const resp = await fetch(`${UPLOAD_SERVER_URL}/api/status`, {
-        headers: { "X-Admin-Token": ADMIN_SECRET }
+        headers: {
+          "X-Admin-Token": ADMIN_SECRET,
+          "bypass-tunnel-reminder": "true",
+        }
       });
       if (resp.ok) {
         const data = await resp.json();

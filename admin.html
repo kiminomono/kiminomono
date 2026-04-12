@@ -729,7 +729,16 @@ async function startUpload() {
 
     setProgress(80, "等待伺服器回應...");
 
-    const data = await resp.json();
+    // 先檢查 HTTP 狀態，再解析 JSON
+    // localtunnel 有時回傳 HTML bypass 頁面，直接 .json() 會 SyntaxError
+    const rawText = await resp.text();
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch (_) {
+      throw new Error(`伺服器回傳非 JSON 內容（${resp.status}）：${rawText.slice(0, 100)}`);
+    }
+
     if (!resp.ok) {
       throw new Error(data.error || `HTTP ${resp.status}`);
     }

@@ -718,7 +718,8 @@ async function startUpload() {
     selectedFiles.forEach((file, idx) => {
       // Rename file before upload
       const newName = getNewName(idx);
-      const renamed = new File([file], newName, { type: file.type });
+      const mimeType = (file.type && file.type.startsWith("image/")) ? file.type : "image/jpeg";
+      const renamed = new File([file], newName, { type: mimeType });
       formData.append("photos", renamed);
     });
 

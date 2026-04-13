@@ -219,7 +219,7 @@
       letter-spacing: 0.1em;
       text-transform: uppercase;
     }
-    select, input {
+    select, input:not([type="radio"]):not([type="checkbox"]) {
       background: var(--bg3);
       border: 1px solid var(--border);
       color: var(--text);
@@ -231,6 +231,13 @@
       transition: border-color 0.15s;
       appearance: none;
       width: 100%;
+    }
+    input[type="radio"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
     }
     select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0 0l6 8 6-8z' fill='%236b7280'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; cursor: pointer; }
     select:focus, input:focus { border-color: var(--accent); }
@@ -493,16 +500,14 @@
             <div style="font-size:11px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">上傳模式</div>
             <div style="display:flex;flex-direction:column;gap:8px;">
               <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-                <input type="radio" name="mergeMode" id="modeReplace" value="replace" checked
-                  style="width:auto;padding:0;background:none;border:none;accent-color:var(--accent);" />
+                <input type="radio" name="mergeMode" id="modeReplace" value="replace" checked />
                 <div>
                   <div style="font-size:13px;color:var(--text);">取代現有內容</div>
                   <div style="font-size:11px;color:var(--muted);margin-top:2px;">新的一課 — 舊的文法／單字會被替換</div>
                 </div>
               </label>
               <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-                <input type="radio" name="mergeMode" id="modeAppend" value="append"
-                  style="width:auto;padding:0;background:none;border:none;accent-color:var(--accent);" />
+                <input type="radio" name="mergeMode" id="modeAppend" value="append" />
                 <div>
                   <div style="font-size:13px;color:var(--text);">新增到現有內容</div>
                   <div style="font-size:11px;color:var(--muted);margin-top:2px;">補充照片 — 保留舊的，加入新的</div>
@@ -798,9 +803,16 @@ async function startUpload() {
    
   } catch (err) {
     setProgress(0, "");
-    const msg = err.message || err.toString() || "未知錯誤";
-    showResult("error", `❌ 上傳失敗：${msg}<br/><small>${err.name || ""}: ${err.stack || ""}</small>`);
-    log(`❌ ${msg}`, "err");
+    let msg = err.message || err.toString() || "未知錯誤";
+    // Safari 的 fetch 網路失敗
+    if (msg.includes("Load failed") || msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
+      msg = `無法連線到 upload server。請確認：<br/>
+        1. Mac mini 的 upload_server.py 正在執行<br/>
+        2. cloudflared tunnel 正在執行<br/>
+        3. <a href="https://upload.kiminomono.com/api/health" target="_blank" style="color:var(--accent2)">測試連線 ↗</a>`;
+    }
+    showResult("error", `❌ 上傳失敗：${msg}`);
+    log(`❌ ${err.message || err}`, "err");
     console.error("Upload error:", err);
     document.getElementById("uploadBtn").disabled = false;
   }

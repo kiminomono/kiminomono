@@ -588,7 +588,7 @@ const SUPABASE_URL = "https://nbxdhhzzkpwwboyrhtks.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ieGRoaHp6a3B3d2JveXJodGtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MTMwNTQsImV4cCI6MjA5MDk4OTA1NH0.2Z7wn7pyZDvmOLCtsQBVg-P3I3D98ahY0IqYWdvCuJQ";
 
 // ← ngrok 啟動後把網址貼這裡，例：https://xxxx.ngrok-free.app
-const UPLOAD_SERVER_URL = "https://warm-radios-slide.loca.lt";
+const UPLOAD_SERVER_URL = "https://upload.kiminomono.com";
 // ← 跟 upload_server.py 的 ADMIN_SECRET 環境變數一樣
 const ADMIN_SECRET = "kiminomono-2026";
 
@@ -725,7 +725,6 @@ async function startUpload() {
       method: "POST",
       headers: {
         "X-Admin-Token": ADMIN_SECRET,
-        "bypass-tunnel-reminder": "true",
       },
       body: formData,
     });
@@ -789,7 +788,6 @@ async function refreshStatus() {
       const resp = await fetch(`${UPLOAD_SERVER_URL}/api/status`, {
         headers: {
           "X-Admin-Token": ADMIN_SECRET,
-          "bypass-tunnel-reminder": "true",
         }
       });
       if (resp.ok) {

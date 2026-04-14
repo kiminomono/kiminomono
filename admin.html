@@ -182,6 +182,7 @@
     .badge-ready    { background: rgba(34,197,94,0.15);  color: var(--success); }
     .badge-pending  { background: rgba(107,114,128,0.15); color: var(--muted); }
     .badge-processing { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .badge-quota      { background: rgba(239,68,68,0.15);  color: var(--danger); }
 
     /* ── UPLOAD PANEL ── */
     .panel {
@@ -892,7 +893,17 @@ function renderStatusCards(containerId, statusMap, compact) {
       </div>
       ${!compact ? `<div class="status-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
         <span class="status-row-label">狀態</span>
-        <span class="badge badge-${status}">${status}</span>
+        ${(() => {
+          const statusLabel = {
+            'ready':          '✓ Ready',
+            'pending':        'Pending',
+            'processing':     'Processing',
+            'error':          '❌ Error',
+            'quota_exceeded': '⚠️ Quota 用完',
+          }[status] || status;
+          const badgeClass = status === 'quota_exceeded' ? 'quota' : status;
+          return `<span class="badge badge-${badgeClass}">${statusLabel}</span>`;
+        })()}
       </div>` : ""}
     `;
     container.appendChild(card);

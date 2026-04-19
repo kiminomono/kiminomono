@@ -330,6 +330,52 @@
     }
     .empty-desc { font-size: 13px; line-height: 1.7; }
 
+    /* ── 文章 ── */
+    .sentences { margin-bottom: 20px; }
+    .sentence-item {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .sentence-item:last-child { border-bottom: none; }
+    .sentence-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 11px;
+      color: var(--beni);
+      margin-bottom: 4px;
+    }
+    .sentence-jp {
+      font-family: 'Noto Serif JP', serif;
+      font-size: 16px;
+      line-height: 1.8;
+      color: var(--sumi);
+      margin-bottom: 4px;
+      letter-spacing: 0.03em;
+    }
+    .sentence-zh {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'Noto Sans TC', sans-serif;
+      font-weight: 300;
+      line-height: 1.6;
+    }
+    .teacher-note {
+      margin-top: 16px;
+      padding: 14px 16px;
+      background: rgba(155,58,46,0.05);
+      border-left: 3px solid var(--beni);
+      border-radius: 0 2px 2px 0;
+      font-size: 13px;
+      color: var(--sumi2);
+      line-height: 1.8;
+    }
+    .teacher-note-label {
+      font-size: 11px;
+      color: var(--beni);
+      letter-spacing: 0.1em;
+      margin-bottom: 6px;
+    }
+
     /* ── フッター ── */
     .site-footer {
       text-align: center;
@@ -586,9 +632,35 @@ function renderContent(row) {
 
   const audioHtml = createAudioPlayer(row.drive_audio_url);
 
+  // Sentences
+  let sentencesHtml = "";
+  if (row.sentences_json) {
+    try {
+      const sentences = JSON.parse(row.sentences_json);
+      sentencesHtml = `<div class="sentences">` +
+        sentences.map(s => `
+          <div class="sentence-item">
+            <div class="sentence-num">${s.num}.</div>
+            <div class="sentence-jp">${s.jp || ""}</div>
+          </div>
+        `).join("") +
+        `</div>`;
+    } catch(e) { sentencesHtml = ""; }
+  }
+
+  // Teacher note
+  let teacherNoteHtml = "";
+  if (row.teacher_note) {
+    teacherNoteHtml = `
+      <div class="teacher-note">
+        <div class="teacher-note-label">💡 先生より</div>
+        ${row.teacher_note}
+      </div>`;
+  }
+
   const driveLinks = [];
   if (row.drive_text_url) {
-    driveLinks.push(`<a class="drive-link" href="${row.drive_text_url}" target="_blank">📄 翻訳・全文</a>`);
+    driveLinks.push(`<a class="drive-link" href="${row.drive_text_url}" target="_blank">📄 中文翻訳・全文を見る</a>`);
   }
 
   area.innerHTML = `
@@ -605,6 +677,8 @@ function renderContent(row) {
           ${grammarTags}
           ${vocabTags}
         </div>` : ""}
+        ${sentencesHtml}
+        ${teacherNoteHtml}
         ${driveLinks.length ? `<div class="drive-links">${driveLinks.join("")}</div>` : ""}
       </div>
     </div>

@@ -376,6 +376,115 @@
       margin-bottom: 6px;
     }
 
+    /* ── 投票 ── */
+    .vote-card {
+      background: rgba(255,255,255,0.6);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 20px rgba(26,24,20,0.06);
+      animation: fadeUp 0.5s ease 0.2s both;
+    }
+    .vote-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .vote-header::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 12px; bottom: 12px;
+      width: 3px;
+      background: var(--gold);
+      border-radius: 0 2px 2px 0;
+    }
+    .vote-label {
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      color: var(--gold);
+      margin-bottom: 6px;
+      font-family: 'Cormorant Garamond', serif;
+    }
+    .vote-title {
+      font-family: 'Zen Old Mincho', serif;
+      font-size: 15px;
+      color: var(--sumi);
+      line-height: 1.5;
+    }
+    .vote-body { padding: 16px 24px; }
+    .vote-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .vote-option {
+      position: relative;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--washi2);
+      overflow: hidden;
+    }
+    .vote-option:hover { border-color: var(--gold); }
+    .vote-option.selected { border-color: var(--gold); background: rgba(184,134,11,0.06); }
+    .vote-option.voted { cursor: default; }
+    .vote-option-label {
+      font-size: 11px;
+      color: var(--gold);
+      letter-spacing: 0.1em;
+      margin-bottom: 4px;
+      font-family: 'Cormorant Garamond', serif;
+    }
+    .vote-option-text {
+      font-family: 'Noto Serif JP', serif;
+      font-size: 14px;
+      color: var(--sumi);
+      position: relative;
+      z-index: 1;
+    }
+    .vote-bar {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      background: rgba(184,134,11,0.1);
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+    .vote-pct {
+      font-size: 11px;
+      color: var(--gold);
+      font-family: 'Cormorant Garamond', serif;
+      position: relative;
+      z-index: 1;
+      margin-top: 4px;
+    }
+    .vote-btn {
+      width: 100%;
+      padding: 10px;
+      background: var(--beni);
+      color: #fff;
+      border: none;
+      border-radius: 2px;
+      font-family: 'Noto Serif JP', serif;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+      letter-spacing: 0.08em;
+    }
+    .vote-btn:hover { background: var(--beni2); }
+    .vote-btn:disabled { background: var(--muted); cursor: default; }
+    .vote-total {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 10px;
+      font-family: 'Cormorant Garamond', serif;
+    }
+    .vote-closed {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 8px 0;
+    }
+
     /* ── フッター ── */
     .site-footer {
       text-align: center;
@@ -428,6 +537,9 @@
       <span class="loading-dot">●</span>
     </div>
   </div>
+
+  <!-- Vote area -->
+  <div id="voteArea"></div>
 
   <!-- Footer -->
   <footer class="site-footer">
@@ -703,6 +815,126 @@ async function selectClass(classId, btn) {
   await loadContent();
 }
 
+// ── Vote system ──────────────────────────────────────────
+let currentVote = null;
+
+function getVoteKey(week, classId) {
+  return `vote_${classId}_${week}`;
+}
+
+function hasVoted(week, classId) {
+  return !!localStorage.getItem(getVoteKey(week, classId));
+}
+
+function markVoted(week, classId, option) {
+  localStorage.setItem(getVoteKey(week, classId), option);
+}
+
+async function fetchVote(classId) {
+  const iso = new Date();
+  const d = new Date(Date.UTC(iso.getFullYear(), iso.getMonth(), iso.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  const week = `${d.getUTCFullYear()}-W${String(weekNo).padStart(2,"0")}`;
+
+  const resp = await fetch(
+    `${SUPABASE_URL}/rest/v1/votes?class_id=eq.${classId}&week=eq.${week}&select=*&limit=1`,
+    { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } }
+  );
+  const rows = await resp.json();
+  return rows.length ? { ...rows[0], week } : null;
+}
+
+async function submitVote(option) {
+  if (!currentVote) return;
+  const { id, week } = currentVote;
+
+  // Mark voted in localStorage
+  markVoted(week, currentClass, option);
+
+  // Increment vote count in Supabase using RPC
+  const field = `votes_${option}`;
+  const newCount = (currentVote[field] || 0) + 1;
+  currentVote[field] = newCount;
+
+  await fetch(
+    `${SUPABASE_URL}/rest/v1/votes?id=eq.${id}`,
+    {
+      method: "PATCH",
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal",
+      },
+      body: JSON.stringify({ [field]: newCount }),
+    }
+  );
+
+  renderVote(currentVote, true);
+}
+
+function renderVote(vote, justVoted = false) {
+  const container = document.getElementById("voteArea");
+  if (!container) return;
+  if (!vote) { container.innerHTML = ""; return; }
+
+  const voted     = hasVoted(vote.week, currentClass);
+  const showResults = voted || vote.status === "closed";
+  const total     = (vote.votes_a || 0) + (vote.votes_b || 0) + (vote.votes_c || 0);
+  const myVote    = localStorage.getItem(getVoteKey(vote.week, currentClass));
+
+  const options = [
+    { key: "a", label: "A", text: vote.option_a, votes: vote.votes_a || 0 },
+    { key: "b", label: "B", text: vote.option_b, votes: vote.votes_b || 0 },
+    { key: "c", label: "C", text: vote.option_c, votes: vote.votes_c || 0 },
+  ];
+
+  const optionsHtml = options.map(o => {
+    const pct = total > 0 ? Math.round((o.votes / total) * 100) : 0;
+    const isMyVote = myVote === o.key;
+    return `
+      <div class="vote-option ${showResults ? 'voted' : ''} ${isMyVote ? 'selected' : ''}"
+           ${!showResults ? `onclick="submitVote('${o.key}')"` : ""}>
+        <div class="vote-bar" style="width:${showResults ? pct : 0}%"></div>
+        <div class="vote-option-label">${o.label}${isMyVote ? " ✓" : ""}</div>
+        <div class="vote-option-text">${o.text}</div>
+        ${showResults ? `<div class="vote-pct">${pct}%（${o.votes}票）</div>` : ""}
+      </div>`;
+  }).join("");
+
+  const statusHtml = vote.status === "closed"
+    ? `<div class="vote-closed">投票は終了しました</div>`
+    : !showResults
+    ? `<button class="vote-btn" disabled>選択肢を選んでください</button>`
+    : `<div class="vote-total">合計 ${total} 票</div>`;
+
+  container.innerHTML = `
+    <div class="vote-card">
+      <div class="vote-header">
+        <div class="vote-label">🗳 今週の投票 · ${vote.week}</div>
+        <div class="vote-title">来週のストーリー、どうなる？</div>
+      </div>
+      <div class="vote-body">
+        <div class="vote-options">${optionsHtml}</div>
+        ${statusHtml}
+      </div>
+    </div>`;
+
+  currentVote = vote;
+}
+
+async function loadVote() {
+  try {
+    const vote = await fetchVote(currentClass);
+    currentVote = vote;
+    renderVote(vote);
+  } catch(e) {
+    console.error("Vote load error:", e);
+  }
+}
+
 // ── Main load ─────────────────────────────────────────────
 async function loadContent() {
   document.getElementById("contentArea").innerHTML = `
@@ -740,6 +972,9 @@ async function loadContent() {
         <div class="empty-desc">${e.message}</div>
       </div>`;
   }
+
+  // Load vote independently
+  await loadVote();
 }
 
 // ── Init ─────────────────────────────────────────────────

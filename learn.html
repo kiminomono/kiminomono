@@ -359,6 +359,24 @@
       font-weight: 300;
       line-height: 1.6;
     }
+    /* 会話スタイル */
+    .conv-item {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 8px;
+      align-items: baseline;
+    }
+    .conv-speaker {
+      font-size: 11px;
+      color: var(--beni);
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-align: right;
+      padding-right: 8px;
+      border-right: 2px solid var(--beni);
+      white-space: nowrap;
+    }
+
     .teacher-note {
       margin-top: 16px;
       padding: 14px 16px;
@@ -795,19 +813,38 @@ function renderContent(rows, activeType) {
 
   const audioHtml = createAudioPlayer(row.drive_audio_url);
 
-  // Sentences
+  // Sentences / Conversation
   let sentencesHtml = "";
   if (row.sentences_json) {
     try {
       const sentences = JSON.parse(row.sentences_json);
-      sentencesHtml = `<div class="sentences">` +
-        sentences.map(s => `
-          <div class="sentence-item">
-            <div class="sentence-num">${s.num}.</div>
-            <div class="sentence-jp">${s.jp || ""}</div>
-          </div>
-        `).join("") +
-        `</div>`;
+      const isConv = row.content_type === "drama-conv";
+
+      if (isConv) {
+        // Conversation format: [{speaker, jp, zh}, ...]
+        sentencesHtml = `<div class="sentences conversation">` +
+          sentences.map(s => {
+            const speaker = s.speaker || "";
+            const jp = s.jp || "";
+            if (!jp) return "";
+            return `
+              <div class="sentence-item conv-item">
+                <div class="conv-speaker">${speaker}</div>
+                <div class="sentence-jp">${jp}</div>
+              </div>`;
+          }).join("") +
+          `</div>`;
+      } else {
+        // Normal format: [{num, jp, zh}, ...]
+        sentencesHtml = `<div class="sentences">` +
+          sentences.map(s => `
+            <div class="sentence-item">
+              <div class="sentence-num">${s.num}.</div>
+              <div class="sentence-jp">${s.jp || ""}</div>
+            </div>
+          `).join("") +
+          `</div>`;
+      }
     } catch(e) { sentencesHtml = ""; }
   }
 

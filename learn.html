@@ -376,6 +376,32 @@
       margin-bottom: 6px;
     }
 
+    /* ── コンテンツタブ ── */
+    .content-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .content-tab {
+      padding: 5px 14px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Noto Serif JP', serif;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.05em;
+    }
+    .content-tab:hover { border-color: var(--beni); color: var(--beni); }
+    .content-tab.active {
+      background: var(--beni);
+      border-color: var(--beni);
+      color: #fff;
+    }
+
     /* ── 投票 ── */
     .vote-card {
       background: rgba(255,255,255,0.6);
@@ -608,7 +634,7 @@ async function fetchWeekContent(classId) {
   const from   = dates[0];
   const to     = dates[6];
   const resp   = await fetch(
-    `${SUPABASE_URL}/rest/v1/daily_content?class_id=eq.${classId}&date=gte.${from}&date=lte.${to}&select=*&order=date.desc`,
+    `${SUPABASE_URL}/rest/v1/daily_content?class_id=eq.${classId}&date=gte.${from}&date=lte.${to}&select=*&order=date.desc,content_type.asc`,
     { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` } }
   );
   return await resp.json();
@@ -618,8 +644,12 @@ async function fetchWeekContent(classId) {
 function renderWeekStrip(contents) {
   const dates   = getWeekDates();
   const dateSet = {};
-  contents.forEach(c => { dateSet[c.date] = c; });
-  weekContents  = dateSet;
+  // Store all content types per date as array
+  contents.forEach(c => {
+    if (!dateSet[c.date]) dateSet[c.date] = [];
+    dateSet[c.date].push(c);
+  });
+  weekContents = dateSet;
 
   const strip = document.getElementById("weekStrip");
   strip.innerHTML = "";
@@ -719,9 +749,11 @@ function seekAudio(e, id) {
 }
 
 // ── Content card ──────────────────────────────────────────
-function renderContent(row) {
+function renderContent(rows, activeType) {
   const area = document.getElementById("contentArea");
-  if (!row) {
+  // Handle both single row (legacy) and array
+  if (!Array.isArray(rows)) rows = rows ? [rows] : [];
+  if (!rows || rows.length === 0) {
     area.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">📭</div>
@@ -775,7 +807,7 @@ function renderContent(row) {
     driveLinks.push(`<a class="drive-link" href="${row.drive_text_url}" target="_blank">📄 中文翻訳・全文を見る</a>`);
   }
 
-  area.innerHTML = `
+  area.innerHTML = tabsHtml + `
     <div class="content-card">
       <div class="card-header">
         <div class="card-type">${TYPE_LABELS[row.content_type] || row.content_type} · ${formatDate(row.date)}</div>
@@ -805,7 +837,7 @@ function selectDate(date) {
     const dates = getWeekDates();
     el.classList.toggle("active", dates[i] === date);
   });
-  renderContent(weekContents[date] || null);
+  renderContent(weekContents[date] || []);
 }
 
 async function selectClass(classId, btn) {
@@ -950,18 +982,18 @@ async function loadContent() {
 
     // Show today's content, or most recent
     const todayContent = weekContents[currentDate];
-    if (todayContent) {
+    if (todayContent && todayContent.length > 0) {
       renderContent(todayContent);
     } else {
       // Find most recent
       const dates  = getWeekDates().reverse();
-      const recent = dates.find(d => weekContents[d]);
+      const recent = dates.find(d => weekContents[d] && weekContents[d].length > 0);
       if (recent) {
         currentDate = recent;
         renderWeekStrip(contents);
         renderContent(weekContents[recent]);
       } else {
-        renderContent(null);
+        renderContent([]);
       }
     }
   } catch (e) {

@@ -764,6 +764,25 @@ function renderContent(rows, activeType) {
     return;
   }
 
+  // Pick active row
+  const row = activeType
+    ? (rows.find(r => r.content_type === activeType) || rows[0])
+    : rows[0];
+
+  // Save rows globally for tab switching
+  window.currentRows = rows;
+
+  // Render tabs if multiple content types
+  const tabsHtml = rows.length > 1 ? `
+    <div class="content-tabs">
+      ${rows.map(r => `
+        <button class="content-tab ${r.content_type === row.content_type ? 'active' : ''}"
+          onclick="renderContent(window.currentRows, '${r.content_type}')">
+          ${TYPE_LABELS[r.content_type] || r.content_type}
+        </button>
+      `).join('')}
+    </div>` : '';
+
   const grammarTags = row.grammar_used
     ? row.grammar_used.split(",").filter(Boolean).map(g =>
         `<span class="tag tag-grammar">${g.trim()}</span>`

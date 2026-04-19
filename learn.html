@@ -416,9 +416,11 @@ function formatDate(dateStr) {
 
 function getWeekDates() {
   const today = new Date(todayStr() + "T00:00:00");
-  const day   = today.getDay();
-  const mon   = new Date(today);
-  mon.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
+  const day   = today.getDay(); // 0=Sun, 1=Mon, ...6=Sat
+  // Week starts Monday, Sunday is day 7 (end of week)
+  const offset = day === 0 ? 6 : day - 1;
+  const mon = new Date(today);
+  mon.setDate(today.getDate() - offset);
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(mon);
     d.setDate(mon.getDate() + i);
@@ -473,25 +475,27 @@ function renderWeekStrip(contents) {
 function createAudioPlayer(audioUrl) {
   if (!audioUrl) return "";
 
-  // Convert Drive view URL to direct embed
   const fileMatch = audioUrl.match(/\/file\/d\/([^/]+)/);
   if (!fileMatch) return "";
-  const fileId    = fileMatch[1];
-  const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+  const fileId = fileMatch[1];
 
-  const playerId = "player_" + Math.random().toString(36).slice(2);
+  // Use Google Drive preview embed (avoids CORS issues)
+  const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+
   return `
-    <div class="audio-player">
-      <button class="play-btn" id="btn_${playerId}" onclick="toggleAudio('${playerId}', '${directUrl}')">▶</button>
-      <div class="audio-info">
-        <div class="audio-label">音声を聞いて練習しましょう</div>
-        <div class="audio-progress" onclick="seekAudio(event, '${playerId}')">
-          <div class="audio-progress-fill" id="prog_${playerId}"></div>
-        </div>
+    <div style="margin-bottom:20px;">
+      <div class="audio-label" style="font-size:11px;color:var(--muted);letter-spacing:0.1em;margin-bottom:8px;">
+        🔊 音声を聞いて練習しましょう
       </div>
-      <div class="audio-time" id="time_${playerId}">0:00</div>
+      <iframe
+        src="${embedUrl}"
+        width="100%"
+        height="80"
+        frameborder="0"
+        allow="autoplay"
+        style="border:1px solid var(--border);border-radius:2px;background:var(--washi2);"
+      ></iframe>
     </div>
-    <audio id="${playerId}" src="${directUrl}" preload="none"></audio>
   `;
 }
 

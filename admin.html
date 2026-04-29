@@ -890,6 +890,7 @@ function renderStatusCards(containerId, statusMap, compact) {
       <div class="status-row">
         <span class="status-row-label">單字 Vocab</span>
         <span class="badge ${vocabDone ? 'badge-ready' : 'badge-pending'}">${vocabDone ? "✓ Ready" : "Pending"}</span>
+        ${!vocabDone ? `<button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;margin-left:6px;" onclick="carryVocab('${cls}')">沿用上週 ↩</button>` : ""}
       </div>
       ${!compact ? `<div class="status-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
         <span class="status-row-label">狀態</span>
@@ -908,6 +909,28 @@ function renderStatusCards(containerId, statusMap, compact) {
     `;
     container.appendChild(card);
   });
+}
+
+// ── Carry Vocab ───────────────────────────────────────────
+async function carryVocab(classId) {
+  if (!UPLOAD_SERVER_URL) { log("❌ Upload server URL not set", "error"); return; }
+  log(`⏳ Carrying over vocab from last week for ${classId.toUpperCase()}...`);
+  try {
+    const resp = await fetch(`${UPLOAD_SERVER_URL}/api/carry-vocab`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Admin-Token": ADMIN_SECRET },
+      body: JSON.stringify({ class_id: classId }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      log(`❌ ${data.error || "Failed"}`, "error");
+      return;
+    }
+    log(`✅ ${data.message}`, "success");
+    await refreshStatus();
+  } catch (e) {
+    log(`❌ ${e.message}`, "error");
+  }
 }
 
 // ── Helpers ───────────────────────────────────────────────

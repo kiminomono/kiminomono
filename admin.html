@@ -489,7 +489,7 @@
             </div>
             <div class="field">
               <label>類型 Type</label>
-              <select id="typeSelect" onchange="updateFileNames()">
+              <select id="typeSelect" onchange="updateFileNames(); updateCarryOther()">
                 <option value="grammar">文法 Grammar</option>
                 <option value="vocab">單字 Vocabulary</option>
               </select>
@@ -515,6 +515,17 @@
                 </div>
               </label>
             </div>
+          </div>
+
+          <!-- Carry other field from last week -->
+          <div id="carryOtherRow" style="display:none;margin-bottom:16px;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;">
+              <input type="checkbox" id="carryOtherCheck" checked />
+              <div>
+                <div id="carryOtherLabel" style="font-size:13px;color:var(--text);"></div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px;">上週內容不變時使用</div>
+              </div>
+            </label>
           </div>
 
           <div class="dropzone" id="dropzone">
@@ -742,10 +753,14 @@ async function startUpload() {
     setProgress(10, "準備上傳...");
 
     // Build FormData
+    const carryOther = document.getElementById("carryOtherCheck")?.checked &&
+                       document.getElementById("carryOtherRow")?.style.display !== "none";
     const formData = new FormData();
-    formData.append("class_id",   cls);
-    formData.append("scan_type",  type);
-    formData.append("merge_mode", mergeMode);
+    formData.append("class_id",    cls);
+    formData.append("scan_type",   type);
+    formData.append("merge_mode",  mergeMode);
+    formData.append("carry_other", carryOther ? "true" : "false");
+    if (carryOther) log(`↩ 將沿用上週${type === "grammar" ? "單字" : "文法"}`, "info");
 
     selectedFiles.forEach((file, idx) => {
       formData.append("photos", file, getNewName(idx));
@@ -890,7 +905,6 @@ function renderStatusCards(containerId, statusMap, compact) {
       <div class="status-row">
         <span class="status-row-label">單字 Vocab</span>
         <span class="badge ${vocabDone ? 'badge-ready' : 'badge-pending'}">${vocabDone ? "✓ Ready" : "Pending"}</span>
-        ${!vocabDone ? `<button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;margin-left:6px;" onclick="carryVocab('${cls}')">沿用上週 ↩</button>` : ""}
       </div>
       ${!compact ? `<div class="status-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
         <span class="status-row-label">狀態</span>
@@ -911,7 +925,22 @@ function renderStatusCards(containerId, statusMap, compact) {
   });
 }
 
-// ── Carry Vocab ───────────────────────────────────────────
+// ── Carry Other Field ─────────────────────────────────────
+function updateCarryOther() {
+  const type  = document.getElementById("typeSelect").value;
+  const row   = document.getElementById("carryOtherRow");
+  const label = document.getElementById("carryOtherLabel");
+  if (type === "grammar") {
+    label.textContent = "同時沿用上週單字 (Carry over last week's vocab)";
+    row.style.display = "block";
+  } else if (type === "vocab") {
+    label.textContent = "同時沿用上週文法 (Carry over last week's grammar)";
+    row.style.display = "block";
+  } else {
+    row.style.display = "none";
+  }
+}
+
 async function carryVocab(classId) {
   if (!UPLOAD_SERVER_URL) { log("❌ Upload server URL not set", "error"); return; }
   log(`⏳ Carrying over vocab from last week for ${classId.toUpperCase()}...`);
